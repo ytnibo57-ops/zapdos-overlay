@@ -35,7 +35,7 @@
     background: var(--ink);
     overflow: hidden;
   }
-  .band video {
+  .band img.eyes {
     /* Slightly taller than the band and gently stretched so the whole eye (close/open) stays in view. */
     position: absolute; left: 0; top: calc((var(--band-h) - var(--video-h)) / 2);
     width: var(--video-w); height: var(--video-h);
@@ -78,10 +78,8 @@
 
 <div id="stage">
   <div class="band">
-    <video id="eyes" autoplay loop muted playsinline preload="auto" disablepictureinpicture>
-      <source src="eyes.mp4" type="video/mp4">
-      <source src="eyes.webm" type="video/webm">
-    </video>
+    <!-- Animated WebP instead of <video>: live-stream capture (Facebook etc.) can drop video layers, but images always render. -->
+    <img class="eyes" id="eyes" src="eyes.webp" alt="" decoding="async">
     <div class="tag">
       <div class="name">Zapdos</div>
       <div class="live"><span class="dot"></span>Is Live</div>
@@ -98,14 +96,6 @@
     }
     fit(); window.addEventListener("resize", fit);
 
-    // Make sure the video keeps playing (some browser sources pause it until poked).
-    var v = document.getElementById("eyes");
-    v.muted = true;
-    function go() { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
-    go();
-    v.addEventListener("canplay", go);
-    v.addEventListener("pause", function () { setTimeout(go, 300); });
-    document.addEventListener("visibilitychange", go);
   })();
 </script>
 
