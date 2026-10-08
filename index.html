@@ -35,7 +35,7 @@
     background: var(--ink);
     overflow: hidden;
   }
-  .band img.eyes {
+  .band canvas.eyes {
     /* Slightly taller than the band and gently stretched so the whole eye (close/open) stays in view. */
     position: absolute; left: 0; top: calc((var(--band-h) - var(--video-h)) / 2);
     width: var(--video-w); height: var(--video-h);
@@ -78,8 +78,9 @@
 
 <div id="stage">
   <div class="band">
-    <!-- Animated WebP instead of <video>: live-stream capture (Facebook etc.) can drop video layers, but images always render. -->
-    <img class="eyes" id="eyes" src="eyes.webp" alt="" decoding="async">
+    <!-- Eyes loop is drawn frame-by-frame from JPGs (time-based), because live-stream capture freezes <video> and animated images. -->
+    <canvas class="eyes" id="eyes" width="720" height="230"></canvas>
+    <div id="dbg" style="position:absolute;left:8px;top:8px;color:#0f0;font:28px monospace;display:none"></div>
     <div class="tag">
       <div class="name">Zapdos</div>
       <div class="live"><span class="dot"></span>Is Live</div>
@@ -96,6 +97,31 @@
     }
     fit(); window.addEventListener("resize", fit);
 
+    // ---- Eyes loop: JPG frame sequence drawn on a canvas, picked by wall-clock time ----
+    var N = 149, FPS = 10;
+    var cv = document.getElementById("eyes"), ctx = cv.getContext("2d");
+    var dbg = document.getElementById("dbg");
+    var showDbg = /[?&]debug/.test(location.search);
+    if (showDbg) dbg.style.display = "block";
+    var frames = [], loaded = 0, last = -1, t0 = Date.now();
+    function pad(n) { return ("00" + n).slice(-3); }
+    for (var i = 0; i < N; i++) {
+      (function (i) {
+        var im = new Image();
+        im.onload = function () { loaded++; };
+        im.src = "frames/f" + pad(i + 1) + ".jpg";
+        frames[i] = im;
+      })(i);
+    }
+    function tick() {
+      var i = Math.floor((Date.now() - t0) / (1000 / FPS)) % N;
+      var im = frames[i];
+      if (im && im.complete && im.naturalWidth) { ctx.drawImage(im, 0, 0, cv.width, cv.height); last = i; }
+      else if (last >= 0) { /* keep previous frame until this one has loaded */ }
+      if (showDbg) dbg.textContent = "frame " + i + "/" + N + "  loaded " + loaded;
+    }
+    tick();
+    setInterval(tick, 50);
   })();
 </script>
 
